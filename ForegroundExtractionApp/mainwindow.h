@@ -38,12 +38,11 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QVBoxLayout* mainLayout;
-    //QPixmap myPix;
     void displayMsg(const char* msg);
     QImage imageToProcess, imageToProcessDebayered;
     QImage imageCleanPlate, imageCleanPlateDebayered;
     QImage imageExtracted;
+    int pixColorDiff(const QRgb pPix1, const QRgb pPix2);
 };
 
 #endif // MAINWINDOW_H

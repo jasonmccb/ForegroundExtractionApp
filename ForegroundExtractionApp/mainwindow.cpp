@@ -7,10 +7,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    
     imageToProcess = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_ARGB32);
     imageCleanPlate = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_ARGB32);
-    imageExtracted = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_ARGB32);
+    imageExtracted = QImage(DEFAULT_IMAGE_WIDTH/2, DEFAULT_IMAGE_HEIGHT/2, QImage::Format::Format_ARGB32);
     imageToProcessDebayered = QImage(DEFAULT_IMAGE_WIDTH/2, DEFAULT_IMAGE_HEIGHT/2, QImage::Format::Format_ARGB32);
     imageCleanPlateDebayered = QImage(DEFAULT_IMAGE_WIDTH/2, DEFAULT_IMAGE_HEIGHT/2, QImage::Format::Format_ARGB32);
 }
@@ -178,5 +178,32 @@ void MainWindow::on_pushButtonSaveBelowImage_clicked()
 
 void MainWindow::on_pushButtonExtractForeGround_clicked()
 {
-    displayMsg("on_pushButtonExtractForeGround_clicked");
+    imageExtracted.fill(qRgb(0, 0, 0));
+    if (imageToProcessDebayered.isNull() || imageCleanPlateDebayered.isNull())
+        return;
+    int w = std::min(imageToProcessDebayered.width(), imageCleanPlateDebayered.width());
+    int h = std::min(imageToProcessDebayered.height(), imageCleanPlateDebayered.height());
+
+    for (int y = 0; y < h; y++)
+    {
+        QRgb* lineBackground = (QRgb*)imageCleanPlateDebayered.scanLine(y);
+        QRgb* lineForeground = (QRgb*)imageToProcessDebayered.scanLine(y);
+        int x = 0;
+        for (x = 0; x < w; x++)
+        {
+            if (pixColorDiff(lineBackground[x], lineForeground[x]) > RGB_DIFF_THRESHOLD)
+                imageExtracted.setPixel(x, y, lineForeground[x]);
+        }
+    }
+    ui->label->pCurrentImage = &imageExtracted;
+    ui->label->update();
+}
+
+int MainWindow::pixColorDiff(const QRgb pPix1, const QRgb pPix2)
+{
+    int ret = 0;
+    ret += std::abs(qRed(pPix1) - qRed(pPix2));
+    ret += std::abs(qGreen(pPix1) - qGreen(pPix2));
+    ret += std::abs(qBlue(pPix1) - qBlue(pPix2));
+    return ret;
 }
