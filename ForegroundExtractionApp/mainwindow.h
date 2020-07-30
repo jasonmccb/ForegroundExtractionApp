@@ -7,6 +7,8 @@
 #include <QFileDialog>
 #include <QImageReader>
 
+typedef QRgb YUV;
+
 namespace Ui {
 class MainWindow;
 }
@@ -43,6 +45,13 @@ private:
     QImage imageCleanPlate, imageCleanPlateDebayered;
     QImage imageExtracted;
     int pixColorDiff(const QRgb pPix1, const QRgb pPix2);
+    QImage denoise(const QImage* pOldImage, const int denoiseEdge, int & denoisedPixelCount);
+    inline int YUV_getY(YUV yuv) { return qRed(yuv); }
+    inline int YUV_getU(YUV yuv) { return qGreen(yuv); }
+    inline int YUV_getV(YUV yuv) { return qBlue(yuv); }
+    YUV Rgb2Yuv(QRgb rgb);
+    bool imageToProcessDebayeredReady = false;
+    bool imageCleanPlateDebayeredReady = false;
 };
 
 #endif // MAINWINDOW_H
