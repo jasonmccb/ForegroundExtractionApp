@@ -11,19 +11,22 @@ find_package(Qt5 REQUIRED COMPONENTS Core Widgets Gui)
 
 set (headers 
 	ForegroundExtractionApp.h 
-	mainwindow.h)
+	mainwindow.h
+	myimagelabel.h
+	helper.h)
 
 set (source_cpps 
 	ForegroundExtractionApp.cpp 
-	mainwindow.cpp)
+	mainwindow.cpp
+	myimagelabel.cpp)
 
 set (uis mainwindow.ui)
 
 qt5_wrap_ui (headers_wrapped ${uis})
 qt5_wrap_cpp (source_moc ${headers})
 
-# Add source to this project's executable.
-add_executable (ForegroundExtractionApp ${source_cpps} ${headers_wrapped} ${source_moc})
+# Add source to this pr.
+add_executable (${PROJECT_NAME} ${source_cpps} ${headers_wrapped} ${source_moc})
 
 target_link_libraries(${PROJECT_NAME}
 	PUBLIC

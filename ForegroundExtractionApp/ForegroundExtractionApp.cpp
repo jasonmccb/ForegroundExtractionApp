@@ -10,6 +10,7 @@ int main(int argc, char** argv)
 	cout << "Hello CMake." << endl;
 	QApplication app(argc, argv);
 	MainWindow mainWindow;
-	mainWindow.show();
+	//mainWindow.show();
+	mainWindow.showMaximized();
 	return app.exec();
 }
