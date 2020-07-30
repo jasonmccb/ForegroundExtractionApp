@@ -6,30 +6,18 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-
     ui->setupUi(this);
 
-    //mainLayout = new QVBoxLayout;
-    //mainLayout->addWidget(ui->label);
-    //setLayout(mainLayout);
-
-    //QPixmap mypix ("C:/Users/Jason/Desktop/shortcuts/temppppp/Barbie.png");
-    //double h_w_ratio = mypix.height() * 1.0 / mypix.width();
-    //QSize qs(ui->centralwidget->rect().width(), ui->centralwidget->rect().height());
-    //newPix = mypix.scaled(500, (int) (h_w_ratio*500), Qt::AspectRatioMode::KeepAspectRatio);
-    //ui->label->setPixmap(newPix);
-
-    imageToProcess = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_RGB32);
-    imageCleanPlate = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_RGB32);
-    imageExtracted = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_RGB32);
-    imageToProcessDebayered = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_RGB32);
-    imageCleanPlateDebayered = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_RGB32);
+    imageToProcess = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_ARGB32);
+    imageCleanPlate = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_ARGB32);
+    imageExtracted = QImage(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, QImage::Format::Format_ARGB32);
+    imageToProcessDebayered = QImage(DEFAULT_IMAGE_WIDTH/2, DEFAULT_IMAGE_HEIGHT/2, QImage::Format::Format_ARGB32);
+    imageCleanPlateDebayered = QImage(DEFAULT_IMAGE_WIDTH/2, DEFAULT_IMAGE_HEIGHT/2, QImage::Format::Format_ARGB32);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    //delete mainLayout;
 }
 
 void MainWindow::displayMsg(const char* msg)
@@ -41,8 +29,8 @@ void MainWindow::displayMsg(const char* msg)
 
 void MainWindow::on_pushButtonChooseImageToProcess_clicked()
 {
-    QFileDialog dialog(this);
-    dialog.setNameFilter(tr("Image (*.png)"));
+    //QFileDialog dialog(this, "Select a file", "C:/Users/Jason/Desktop/shortcuts/temppppp", "PNG image (*.png)");
+    QFileDialog dialog(this, "Select a file", ".", "PNG image (*.png)");
     dialog.setFileMode(QFileDialog::FileMode::ExistingFile);
     QStringList selectedFilePaths;
     if (dialog.exec())
@@ -59,8 +47,8 @@ void MainWindow::on_pushButtonChooseImageToProcess_clicked()
 
 void MainWindow::on_pushButtonChooseImageCleanPlate_clicked()
 {
-    QFileDialog dialog(this);
-    dialog.setNameFilter(tr("Image (*.png)"));
+    //QFileDialog dialog(this, "Select a file", "C:/Users/Jason/Desktop/shortcuts/temppppp", "PNG image (*.png)");
+    QFileDialog dialog(this, "Select a file", ".", "PNG image (*.png)");
     dialog.setFileMode(QFileDialog::FileMode::ExistingFile);
     QStringList selectedFilePaths;
     if (dialog.exec())
@@ -77,15 +65,9 @@ void MainWindow::on_pushButtonChooseImageCleanPlate_clicked()
 
 void MainWindow::on_pushButtonLoadImageToProcess_clicked()
 {
-    QImageReader imgReader("C:/Users/Jason/Desktop/shortcuts/temppppp/Barbie.png");
-    //QImageReader imgReader(ui->lineEditDirImageToProcess->text());
-    
-    //imgReader.setScaledSize(QSize(500, 500));
-    //imgReader.setAutoTransform(false);
+    QImageReader imgReader(ui->lineEditDirImageToProcess->text());
+    //imgReader.setFileName("C:/Users/Jason/Desktop/shortcuts/temppppp/Barbie.png");
     imgReader.read(&imageToProcess);
-
-    //QExifImageHeader qeih;
-
 
     int w = imageToProcess.width();
     int h = imageToProcess.height();
@@ -97,35 +79,101 @@ void MainWindow::on_pushButtonLoadImageToProcess_clicked()
     }
 
     ui->label->pCurrentImage = &imageToProcess;
-    //int w2 = imageToProcess.width();
-    //int h2 = imageToProcess.height();
-
-    QRgb* line = (QRgb*)imageToProcess.scanLine(0);
-    int red = qRed(line[0]);
-    int green = qGreen(line[0]);
-    int blue = qBlue(line[0]);
-
-    int alpha;
+    ui->label->update();
 }
 
 void MainWindow::on_pushButtonLoadImageCleanPlate_clicked()
 {
-    displayMsg("on_pushButtonLoadImageCleanPlate_clicked");
+    QImageReader imgReader(ui->lineEditDirImageCleanPlate->text());
+    //imgReader.setFileName("C:/Users/Jason/Desktop/shortcuts/temppppp/CleanPlate.png");
+    imgReader.read(&imageCleanPlate);
+
+    int w = imageCleanPlate.width();
+    int h = imageCleanPlate.height();
+    if (h > w)
+    {
+        QMatrix matrix;
+        matrix.rotate(-90.0);
+        imageCleanPlate = imageCleanPlate.transformed(matrix, Qt::FastTransformation);
+    }
+
+    ui->label->pCurrentImage = &imageCleanPlate;
+    ui->label->update();
 }
 
 void MainWindow::on_pushButtonDebayerImageToProcess_clicked()
 {
-    displayMsg("on_pushButtonDebayerImageToProcess_clicked");
+    if(imageToProcess.isNull())
+        return;
+    int w = imageToProcess.width();
+    int h = imageToProcess.height();
+
+    for (int y = 0; y+1 < h; y += 2)
+    {
+        QRgb* line1 = (QRgb*)imageToProcess.scanLine(y);
+        QRgb* line2 = (QRgb*)imageToProcess.scanLine(y+1);
+
+        int x = 0;
+        for (x = 0; x + 1 < w; x += 2)
+        {
+            int red = qRed(line1[x]);
+            int green = (qGreen(line1[x+1]) + qGreen(line2[x])) / 2;
+            int blue = qBlue(line2[x+1]);
+            //int alpha;
+            imageToProcessDebayered.setPixel(x/2, y/2, qRgb(red, green, blue));
+        }
+    }
+    if (!imageToProcessDebayered.isNull())
+    {
+        ui->label->pCurrentImage = &imageToProcessDebayered;
+        ui->label->update();
+    }
 }
 
 void MainWindow::on_pushButtonDebayerImageCleanPlate_clicked()
 {
-    displayMsg("on_pushButtonDebayerImageCleanPlate_clicked");
+    if (imageCleanPlate.isNull())
+        return;
+    int w = imageCleanPlate.width();
+    int h = imageCleanPlate.height();
+
+    for (int y = 0; y + 1 < h; y += 2)
+    {
+        QRgb* line1 = (QRgb*)imageCleanPlate.scanLine(y);
+        QRgb* line2 = (QRgb*)imageCleanPlate.scanLine(y + 1);
+
+        int x = 0;
+        for (x = 0; x + 1 < w; x += 2)
+        {
+            int red = qRed(line1[x]);
+            int green = (qGreen(line1[x + 1]) + qGreen(line2[x])) / 2;
+            int blue = qBlue(line2[x + 1]);
+            //int alpha;
+            imageCleanPlateDebayered.setPixel(x / 2, y / 2, qRgb(red, green, blue));
+        }
+    }
+    if (!imageCleanPlateDebayered.isNull())
+    {
+        ui->label->pCurrentImage = &imageCleanPlateDebayered;
+        ui->label->update();
+    }
 }
 
 void MainWindow::on_pushButtonSaveBelowImage_clicked()
 {
-    displayMsg("on_pushButtonSaveBelowImage_clicked");;
+    if (!ui->label->pCurrentImage)
+    {
+        displayMsg("There is no image to save.");
+        return;
+    }
+
+    QFileDialog dialog(this);
+    //dialog.setNameFilter("PNG-Files (*.png)");
+    dialog.setDefaultSuffix("png");
+    if (ui->label->pCurrentImage->save(dialog.getSaveFileName(this, "Save file", ".", "PNG image (*.png)")))
+        displayMsg("Successful.");
+    else
+        displayMsg("Failed!");
 }
 
 void MainWindow::on_pushButtonExtractForeGround_clicked()
