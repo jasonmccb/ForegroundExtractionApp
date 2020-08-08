@@ -264,6 +264,9 @@ QImage MainWindow::denoise(const QImage* pOldImage, const int denoiseEdge, int& 
             for (int x = offSetRadius; x < pOldImage->width() - offSetRadius; x++)
             {
                 QRgb oldPix = lines[rotatedDenoiseLineNumber][x];
+                //std::map<int, QRgb> pixMediums;
+                //int avgRgb;
+                
                 int sumOfRed = 0;
                 int sumOfGreen = 0;
                 int sumOfBlue = 0;
@@ -279,12 +282,24 @@ QImage MainWindow::denoise(const QImage* pOldImage, const int denoiseEdge, int& 
                             sumOfGreen += qGreen(nearPix);
                             sumOfBlue += qBlue(nearPix);
                             count++;
+                            
+                            // Calculate medium instead of mean
+                            /*avgRgb = (qRed(nearPix) + qGreen(nearPix) + qBlue(nearPix)) / 3;
+                            if (pixMediums.size() <= 4)
+                                pixMediums.insert( std::pair<int,QRgb> (avgRgb, nearPix));
+                            if (pixMediums.size() == 5)
+                            {
+                                pixMediums.erase(pixMediums.begin()); 
+                                pixMediums.erase(--pixMediums.end());
+                            }*/
                         }
                     }
                 }
                 
                 QRgb avg = qRgb(sumOfRed / count, sumOfGreen / count, sumOfBlue / count);
-                if(pixColorDiff(oldPix, avg) > RGB_DIFF_DENOISE_THRESHOLD)
+                //QRgb medium = pixMediums[pixMediums.size() / 2];
+                if (pixColorDiff(oldPix, avg) > RGB_DIFF_DENOISE_THRESHOLD)
+                    //newImage.setPixel(x, y - offSetRadius, medium);
                     newImage.setPixel(x, y - offSetRadius, avg);
             }
         }
